@@ -1,5 +1,6 @@
 from aws_cdk import (
     Stack,
+    RemovalPolicy,
     aws_s3,
     aws_cloudfront,
     aws_cloudfront_origins,
@@ -16,7 +17,7 @@ class PyWebdeplStack(Stack):
         super().__init__(scope, construct_id, **kwargs)
 
         deployment_bucket = aws_s3.Bucket(self, "PyDeploymentBucket",
-                                          removal_policy=aws_cdk.RemovalPolicy.DESTROY,
+                                          removal_policy=RemovalPolicy.DESTROY,
                                           auto_delete_objects=True,
                                           )
 
@@ -29,19 +30,35 @@ class PyWebdeplStack(Stack):
 
         print(f"UI directory is: {ui_dir}")
 
-        origin_identity = aws_cloudfront.OriginAccessIdentity(
-            self, "PyOriginAccessIdentity")
+        origin_access_control = aws_cloudfront.S3OriginAccessControl(
+            self, "PyOriginAccessControl"
+        )
 
-        deployment_bucket.grant_read(origin_identity)
-
-        distribution = aws_cloudfront.CloudFrontWebDistribution(
+        distribution = aws_cloudfront.Distribution(
             self, "PyWebDeploymentDistribution",
             default_root_object="index.html",
             default_behavior=aws_cloudfront.BehaviorOptions(
                 origin=aws_cloudfront_origins.S3Origin(
                     bucket=deployment_bucket,
-                    origin_access_identity=origin_identity
+                    origin_access_control=origin_access_control
                 ),
+                viewer_protocol_policy=aws_cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+            )
+        )
+
+        # Grant CloudFront access to the S3 bucket
+        deployment_bucket.add_to_resource_policy(
+            aws_s3.PolicyStatement(
+                sid="AllowCloudFrontServicePrincipal",
+                effect=aws_s3.Effect.ALLOW,
+                principals=[aws_s3.ServicePrincipal("cloudfront.amazonaws.com")],
+                actions=["s3:GetObject"],
+                resources=[f"{deployment_bucket.bucket_arn}/*"],
+                conditions={
+                    "StringEquals": {
+                        "AWS:SourceArn": f"arn:aws:cloudfront::{self.account}:distribution/{distribution.distribution_id}"
+                    }
+                }
             )
         )
 
@@ -52,6 +69,7 @@ class PyWebdeplStack(Stack):
                                             ],
                                             distribution=distribution,
                                             )
+        
         CfnOutput(self, "PyAppUrl",
                    value=f"https://{distribution.distribution_domain_name}",
                    description="URL of the deployed web application",
@@ -70,9 +88,8 @@ class PyWebdeplStack(Stack):
                    export_name="PyDistributionId"
                    )
         
-        CfnOutput(self, "PyOriginAccessIdentity",
-                   value=origin_identity.origin_access_identity_id,
-                   description="ID of the CloudFront Origin Access Identity",
-                   export_name="PyOriginAccessIdentity"
+        CfnOutput(self, "PyOriginAccessControlId",
+                   value=origin_access_control.origin_access_control_id,
+                   description="ID of the CloudFront Origin Access Control",
+                   export_name="PyOriginAccessControlId"
                    )
-        
