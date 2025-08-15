@@ -42,11 +42,12 @@ class PyWebdeplStack(Stack):
             default_behavior=cloudfront.BehaviorOptions(
                 origin=origins.S3Origin(
                     bucket=deployment_bucket,
-                    origin_access_control=origin_access_control
+                    origin_access_control_id=origin_access_control.origin_access_control_id
                 ),
                 viewer_protocol_policy=cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
             )
         )
+
 
         # Grant CloudFront access to the S3 bucket
         deployment_bucket.add_to_resource_policy(
