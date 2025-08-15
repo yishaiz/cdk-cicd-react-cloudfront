@@ -7,6 +7,8 @@ from aws_cdk import (
     aws_s3_deployment,
     CfnOutput
 )
+import aws_cdk as cdk
+
 from constructs import Construct
 import os
 
@@ -51,7 +53,8 @@ class PyWebdeplStack(Stack):
             aws_s3.PolicyStatement(
                 sid="AllowCloudFrontServicePrincipal",
                 effect=aws_s3.Effect.ALLOW,
-                principals=[aws_s3.ServicePrincipal("cloudfront.amazonaws.com")],
+                principals=[aws_s3.ServicePrincipal(
+                    "cloudfront.amazonaws.com")],
                 actions=["s3:GetObject"],
                 resources=[f"{deployment_bucket.bucket_arn}/*"],
                 conditions={
@@ -63,33 +66,34 @@ class PyWebdeplStack(Stack):
         )
 
         aws_s3_deployment.BucketDeployment(self, "PyWebDeploy",
-                                            destination_bucket=deployment_bucket,
-                                            sources=[
-                                                aws_s3_deployment.Source.asset(ui_dir)
-                                            ],
-                                            distribution=distribution,
-                                            )
-        
+                                           destination_bucket=deployment_bucket,
+                                           sources=[
+                                               aws_s3_deployment.Source.asset(
+                                                   ui_dir)
+                                           ],
+                                           distribution=distribution,
+                                           )
+
         CfnOutput(self, "PyAppUrl",
-                   value=f"https://{distribution.distribution_domain_name}",
-                   description="URL of the deployed web application",
-                   export_name="PyAppUrl"
-                   )
-        
+                  value=f"https://{distribution.distribution_domain_name}",
+                  description="URL of the deployed web application",
+                  export_name="PyAppUrl"
+                  )
+
         CfnOutput(self, "PyBucketName",
-                   value=deployment_bucket.bucket_name,
-                   description="Name of the S3 bucket used for deployment",
-                   export_name="PyBucketName"
-                   )
-        
+                  value=deployment_bucket.bucket_name,
+                  description="Name of the S3 bucket used for deployment",
+                  export_name="PyBucketName"
+                  )
+
         CfnOutput(self, "PyDistributionId",
-                   value=distribution.distribution_id,
-                   description="ID of the CloudFront distribution",
-                   export_name="PyDistributionId"
-                   )
-        
+                  value=distribution.distribution_id,
+                  description="ID of the CloudFront distribution",
+                  export_name="PyDistributionId"
+                  )
+
         CfnOutput(self, "PyOriginAccessControlId",
-                   value=origin_access_control.origin_access_control_id,
-                   description="ID of the CloudFront Origin Access Control",
-                   export_name="PyOriginAccessControlId"
-                   )
+                  value=origin_access_control.origin_access_control_id,
+                  description="ID of the CloudFront Origin Access Control",
+                  export_name="PyOriginAccessControlId"
+                  )
