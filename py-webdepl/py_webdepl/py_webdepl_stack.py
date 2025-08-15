@@ -3,7 +3,8 @@ from aws_cdk import (
     aws_s3,
     aws_cloudfront,
     aws_cloudfront_origins,
-    aws_s3_deployment
+    aws_s3_deployment,
+    CfnOutput
 )
 from constructs import Construct
 import os
@@ -51,3 +52,27 @@ class PyWebdeplStack(Stack):
                                             ],
                                             distribution=distribution,
                                             )
+        CfnOutput(self, "PyAppUrl",
+                   value=f"https://{distribution.distribution_domain_name}",
+                   description="URL of the deployed web application",
+                   export_name="PyAppUrl"
+                   )
+        
+        CfnOutput(self, "PyBucketName",
+                   value=deployment_bucket.bucket_name,
+                   description="Name of the S3 bucket used for deployment",
+                   export_name="PyBucketName"
+                   )
+        
+        CfnOutput(self, "PyDistributionId",
+                   value=distribution.distribution_id,
+                   description="ID of the CloudFront distribution",
+                   export_name="PyDistributionId"
+                   )
+        
+        CfnOutput(self, "PyOriginAccessIdentity",
+                   value=origin_identity.origin_access_identity_id,
+                   description="ID of the CloudFront Origin Access Identity",
+                   export_name="PyOriginAccessIdentity"
+                   )
+        
